@@ -1,0 +1,189 @@
+﻿@page "/CreateOrderWindow/{orderId:int}"
+@using OrderApp.Models;
+@using OrderApp.BLL.Interface;
+@using OrderApp.Models.ViewModels;
+@inject IOrderManager orderService
+@inject IOrderWindowManager orderWindowManager;
+@inject IOrderWindowDetailManager orderWindowDetailManager;
+@inject IJSRuntime js;
+<h3>CreateOrderWindow : @orderId</h3>
+
+<div class="container">
+
+    <div class="row">
+        <EditForm Model="@order">
+            <div class="card">
+                <div class="card-title">Order Info</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Order Name</label>
+                            <InputText @bind-Value="order.OrderName" class="form-control"></InputText>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Order State</label>
+                            <InputText @bind-Value="order.OrderState" class="form-control"></InputText>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="row" style="margin-top:20px;">
+        <EditForm Model="@placeOrder">
+            <div class="card">
+                <div class="card-title">
+                    Place Order
+                </div>
+                <div class="card-body">
+                    <input type="hidden" @bind-value="orderId" />
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Window Name</label>
+                            <InputText @bind-Value="placeOrder.ItemWindowName" class="form-control"></InputText>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Window Quantity</label>
+                            <InputNumber @bind-Value="placeOrder.ItemQuantityOfWindow" class="form-control"></InputNumber>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:20px;">
+                        <div class="col-md-3">
+                            <label>Element No</label>
+                            <InputNumber @bind-Value="placeOrder.ItemElementNo" class="form-control"></InputNumber>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Type</label>
+                            <InputText @bind-Value="placeOrder.ItemType" class="form-control"></InputText>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Height</label>
+                            <InputNumber @bind-Value="placeOrder.ItemHeight" class="form-control"></InputNumber>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Width</label>
+                            <InputNumber @bind-Value="placeOrder.ItemWidth" class="form-control"></InputNumber>
+                        </div>
+                        <div class="col-md-2" style="margin-top:27px;">
+                            <button type="button" class="btn btn-info btn-block" @onclick="ItemList" >Add to List</button>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:20px;">
+                        @if (list != null)
+                        {
+                            <table class="table table-striped table-success">
+                                <thead>
+                                    <tr>
+                                        <th>SL</th>
+                                        <th>Element</th>
+                                        <th>Type</th>
+                                        <th>With</th>
+                                        <th>Height</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int rowNo = 0;
+                                    }
+                                    @foreach (var item in list)
+                                    {
+                                        <tr>
+                                            <td>@(rowNo += 1)</td>
+                                            <td>@item.ElementNo</td>
+                                            <td>@item.Type</td>
+                                            <td>@item.Width</td>
+                                            <td>@item.Height</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success" @onclick="SaveOrder">Save Order</button>
+                    <a href="/ViewOrders" class="btn btn-outline-primary">Back to Home</a>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+    
+</div>
+
+@code {
+    [Parameter]
+    public int orderId { set; get; }
+
+    protected Order order = new Order();
+    protected OrderWindow orderWindow = new OrderWindow();
+    protected OrderWindowDetail orderWindowDetail = new OrderWindowDetail();
+
+    protected PlaceOrder placeOrder = new PlaceOrder();
+
+    protected List<OrderWindowDetail> list = new List<OrderWindowDetail>();
+
+    protected override void OnInitialized()
+    {
+        GetOrderById();
+        //list = null;
+    }
+
+    private void GetOrderById()
+    {
+        order = orderService.GetById(orderId);
+    }
+
+    private void SaveOrder()
+    {        
+        OrderWindow order = new OrderWindow();
+        List<OrderWindowDetail> orderDetails = new List<OrderWindowDetail>();
+
+        order.OrderId = orderId;
+        order.WindowName = placeOrder.ItemWindowName;
+        order.QuantityOfWindow = placeOrder.ItemQuantityOfWindow;
+        bool isSave = orderWindowManager.SaveOrderWindow(order, list);
+        if(isSave)
+        {
+            ClearForm();
+            ShowMessage("Order Save Successfully");
+            //js.InvokeAsync<string>("Message", "Order Save Successfully");
+        }
+        else
+        {
+            ShowMessage("Failed to Save Order");
+        }
+    }
+
+    private void ItemList()
+    {
+        OrderWindowDetail orderWindowDetail = new OrderWindowDetail();
+        orderWindowDetail.ElementNo = placeOrder.ItemElementNo;
+        orderWindowDetail.Type = placeOrder.ItemType;
+        orderWindowDetail.Height = placeOrder.ItemHeight;
+        orderWindowDetail.Width = placeOrder.ItemWidth;
+        list.Add(orderWindowDetail);
+        ClearWindowDetailsField();
+    }
+
+    public void ClearWindowDetailsField()
+    {
+        placeOrder.ItemElementNo = 0;
+        placeOrder.ItemType = "";
+        placeOrder.ItemHeight = 0;
+        placeOrder.ItemWidth = 0;
+    }
+
+    public void ClearForm()
+    {
+        list.Clear();
+        placeOrder.ItemWindowName = "";
+        placeOrder.ItemQuantityOfWindow = 0;
+    }
+
+    public async Task ShowMessage(string message)
+    {
+        await js.InvokeVoidAsync("showAlert", message);
+    }
+
+}

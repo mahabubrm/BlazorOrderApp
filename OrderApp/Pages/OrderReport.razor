@@ -1,0 +1,151 @@
+﻿@page "/OrderReport/{orderId:int}"
+@using OrderApp.Models;
+@using OrderApp.BLL.Interface;
+@using OrderApp.Models.ViewModels;
+@inject IOrderManager orderService
+@inject IOrderWindowManager orderWindowManager;
+@inject IOrderWindowDetailManager orderWindowDetailManager;
+@inject IJSRuntime js;
+
+<h3>Order Report</h3>
+<div class="container">
+    @*<div class="row">
+    <EditForm Model="@order">
+    <div class="card">
+    <div class="card-title">Order Info</div>
+    <div class="card-body">
+    <div class="row">
+    <div class="col-md-6">
+    <label>Order Name</label>
+    <InputText @bind-Value="order.OrderName" class="form-control"></InputText>
+    </div>
+    <div class="col-md-6">
+    <label>Order State</label>
+    <InputText @bind-Value="order.OrderState" class="form-control"></InputText>
+    </div>
+    </div>
+    </div>
+    </div>
+    </EditForm>
+    </div>*@
+
+    <div class="row" style="margin-top:20px;">
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="row">
+                    @if (order != null)
+                    {
+                        <h5>Order Info</h5>
+                        <table class="table table-striped table-success">
+                            <thead>
+                                <tr>
+                                    <th>Order Name</th>
+                                    <th>Order State</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>@order.OrderName</td>
+                                    <td>@order.OrderState</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                <div class="row" style="margin-top:20px">
+                    @if (orderWindows != null)
+                    {
+                        <h5>Order Window with all the Elements</h5>
+                        <table class="table table-striped table-success">
+                            <thead>
+                                <tr>
+                                    <th>SL</th>
+                                    <th>Window Name</th>
+                                    <th>Quantity of Window</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int rowNo = 0;
+                                }
+                                @foreach (var item in orderWindows)
+                                {
+                                    <tr>
+                                        <td>@(rowNo += 1)</td>
+                                        <td>@item.WindowName</td>
+                                        <td>@item.QuantityOfWindow</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3">
+                                            <table class="table table-borderless">
+                                                <thead>
+                                                    <tr>
+                                                        <th>SL</th>
+                                                        <th>Element No</th>
+                                                        <th>Type</th>
+                                                        <th>Height</th>
+                                                        <th>Width</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @{
+                                                        int rowSl = 0;
+                                                        var elements = GetOrderElements(item.WindowId);
+                                                    }
+                                                    @foreach (var element in elements)
+                                                    {
+                                                        <tr>
+                                                            <td>@(rowSl += 1)</td>
+                                                            <td>@element.ElementNo</td>
+                                                            <td>@element.Type</td>
+                                                            <td>@element.Height</td>
+                                                            <td>@element.Width</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public int orderId { set; get; }
+
+    protected Order order = new Order();
+    protected List<OrderWindow> orderWindows = new List<OrderWindow>();
+    protected List<OrderWindowDetail> orderWindowDetails = new List<OrderWindowDetail>();
+
+    protected override void OnInitialized()
+    {
+        GetOrderById();
+        //list = null;
+    }
+
+    private void GetOrderById()
+    {
+        order = orderService.GetById(orderId);
+        orderWindows = orderWindowManager.GetAll().Where(o => o.OrderId == orderId).ToList();
+        //orderWindowDetails = orderWindowDetailManager.GetAll().Where(o => o.OrderWindowId == orderWindows.FirstOrDefault().WindowId).ToList();
+    }
+
+    private List<OrderWindowDetail> GetOrderElements(int windowId)
+    {
+        return orderWindowDetailManager.GetAll().Where(o => o.OrderWindowId == windowId).ToList();
+    }
+
+}

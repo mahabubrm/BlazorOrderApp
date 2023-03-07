@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services\**" />
+    <Content Remove="Services\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <None Remove="Services\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="7.0.2" />
+    <PackageReference Include="WireMock.Net.Abstractions" Version="1.5.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OrderApp.BLL\OrderApp.BLL.csproj" />
+    <ProjectReference Include="..\OrderApp.DAL\OrderApp.DAL.csproj" />
+    <ProjectReference Include="..\OrderApp.Models\OrderApp.Models.csproj" />
+  </ItemGroup>
+
+</Project>

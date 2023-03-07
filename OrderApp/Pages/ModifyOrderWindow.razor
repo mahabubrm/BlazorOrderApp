@@ -1,0 +1,152 @@
+﻿@page "/ModifyOrderWindow/{orderId:int}"
+@using OrderApp.Models;
+@using OrderApp.BLL.Interface;
+@using OrderApp.Models.ViewModels;
+@inject IOrderManager orderService
+@inject IOrderWindowManager orderWindowManager;
+@inject IOrderWindowDetailManager orderWindowDetailManager;
+@inject IJSRuntime js;
+@inject NavigationManager nav;
+
+<h3>ModifyOrderWindow : @orderId</h3>
+
+<div class="container">
+
+    <div class="row">
+        <EditForm Model="@order">
+            <div class="card">
+                <div class="card-title">Order Info</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Order Name</label>
+                            <InputText @bind-Value="order.OrderName" class="form-control"></InputText>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Order State</label>
+                            <InputText @bind-Value="order.OrderState" class="form-control"></InputText>
+                        </div>
+                        <input type="hidden" @bind-value="order.OrderId" />
+                    </div>
+                </div>
+                <div class="card-body">
+                    <button type="submit" class="btn btn-success" @onclick="EditOrder">Save Changes</button>
+                    <button type="submit" class="btn btn-danger" @onclick="DeleteOrder">Delete Order</button>
+                    <a href="/ViewOrders" class="btn btn-outline-primary">Go Back</a>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="row" style="margin-top:20px">
+        @if (orderWindows != null)
+        {
+            <table class="table table-striped table-success">
+                <thead>
+                    <tr>
+                        <th>SL</th>
+                        <th>Window Name</th>
+                        <th>Quantity of Window</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int rowNo = 0;
+                    }
+                    @foreach (var item in orderWindows)
+                    {
+                        <tr>
+                            <td>@(rowNo += 1)</td>
+                            <td>@item.WindowName</td>
+                            <td>@item.QuantityOfWindow</td>
+                            <td>
+                                <a href="/ModifyOrderElement/@item.WindowId" class="btn btn-primary">Edit</a>
+                                <input type="button" class="btn btn-danger" value="Delete" @onclick="(()=>DeleteWindowOrder(item.WindowId))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+       
+
+</div>
+
+@code {
+    [Parameter]
+    public int orderId { set; get; }
+
+    protected Order order = new Order();
+    protected OrderWindow orderWindow = new OrderWindow();
+    protected OrderWindowDetail orderWindowDetail = new OrderWindowDetail();
+
+    protected PlaceOrder placeOrder = new PlaceOrder();
+
+    protected List<OrderWindow> orderWindows = new List<OrderWindow>();
+    protected List<OrderWindowDetail> list = new List<OrderWindowDetail>();
+
+    protected override void OnInitialized()
+    {
+        GetOrderById();
+        GetOrderWindowByOrderId();
+    }
+
+    private void GetOrderById()
+    {
+        order = orderService.GetById(orderId);
+    }
+
+    private void GetOrderWindowByOrderId()
+    {
+        orderWindows = orderWindowManager.GetAll().Where(o => o.OrderId == orderId).ToList();
+    }
+
+    private void EditOrder()
+    {
+        bool isUpdate = orderService.Update(order);
+        if (isUpdate)
+        {
+            ShowMessage("Update Successfully");
+        }
+        else
+        {
+            ShowMessage("Update Failed");
+        }
+    }
+
+    private void DeleteOrder()
+    {
+        bool isDelete = orderService.CascadeDeleteOrder(orderId);
+        if (isDelete)
+        {            
+            ShowMessage("Delete Order With all Window and Window Elements is Successfully");
+            nav.NavigateTo("/ViewOrders");
+        }
+        else
+        {
+            ShowMessage("Delete Failed");
+        }
+    }
+
+    private void DeleteWindowOrder(int windowId)
+    {
+        bool isDelete = orderWindowManager.CascadeDeleteOrder(windowId);
+        if (isDelete)
+        {
+            GetOrderWindowByOrderId();
+            ShowMessage("Delete Order with all the Elements is Successfully");
+        }
+        else
+        {
+            ShowMessage("Delete Failed");
+        }
+    }
+
+    public async Task ShowMessage(string message)
+    {
+        await js.InvokeVoidAsync("showAlert", message);
+    }
+        
+}

@@ -1,0 +1,167 @@
+﻿@page "/ModifyOrderElement/{orderWindowId:int}"
+@using OrderApp.Models;
+@using OrderApp.BLL.Interface;
+@using OrderApp.Models.ViewModels;
+@inject IOrderManager orderService;
+@inject IOrderWindowManager orderWindowManager;
+@inject IOrderWindowDetailManager orderWindowDetailManager;
+@inject IJSRuntime JSRuntime;
+@inject NavigationManager nav;
+
+<h3>Modify Order Window Element</h3>
+
+<div class="container">
+
+    <div class="row">
+        <EditForm Model="@orderWindow">
+            <div class="card">
+                <div class="card-title">Order window Info</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Order Widow Name</label>
+                            <InputText @bind-Value="orderWindow.WindowName" class="form-control"></InputText>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Quantity</label>
+                            <InputNumber @bind-Value="orderWindow.QuantityOfWindow" class="form-control"></InputNumber>
+                        </div>
+                        <input type="hidden" @bind-value="orderWindow.WindowId" />
+                    </div>
+                </div>
+                <div class="card-body">
+                    <button type="submit" class="btn btn-success" @onclick="EditOrderWindow" >Save Changes</button>
+                    <button type="submit" class="btn btn-danger" @onclick="DeleteWindowOrder">Delete Order Window</button>
+                    <a href="/ModifyOrderWindow/@orderWindow.OrderId" class="btn btn-outline-primary">Go Back</a>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="row" style="margin-top:20px">
+        @if (orderWindowDetails != null)
+        {
+            <table class="table table-striped table-success">
+                <thead>
+                    <tr>
+                        <th>SL</th>
+                        <th>Element No</th>
+                        <th>Type</th>
+                        <th>Height</th>
+                        <th>Width</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int rowNo = 0;
+                    }
+                    @foreach (var item in orderWindowDetails)
+                    {
+                        <tr>
+                            <td>@(rowNo += 1)</td>
+                            <td>@item.ElementNo</td>
+                            <td>@item.Type</td>
+                            <td><input @bind="item.Height" class="form-control" /> </td>
+                            <td><input @bind="item.Width" class="form-control" /> </td>
+                            <td>
+                                <input type="button" class="btn btn-info" value="Edit" @onclick="(()=>EditElement(item))" />
+                                <input type="button" class="btn btn-danger" value="Delete" @onclick="(()=>DeleteElement(item))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+    
+
+</div>
+
+
+
+@code {
+    [Parameter]
+    public int orderWindowId { set; get; }
+
+    protected OrderWindow orderWindow = new OrderWindow();
+    protected OrderWindowDetail orderWindowDetail = new OrderWindowDetail();
+
+    protected List<OrderWindowDetail> orderWindowDetails = new List<OrderWindowDetail>();
+
+    protected override void OnInitialized()
+    {
+        GetOrderWindowById();
+        GetOrderWindowElementByWindowId();
+    }
+
+    private void GetOrderWindowById()
+    {
+        orderWindow = orderWindowManager.GetById(orderWindowId);
+    }
+
+
+    private void GetOrderWindowElementByWindowId()
+    {
+        orderWindowDetails = orderWindowDetailManager.GetAll().Where(o => o.OrderWindowId == orderWindowId).ToList();
+    }
+
+    private void EditOrderWindow()
+    {
+        bool isUpdate = orderWindowManager.Update(orderWindow);
+        if (isUpdate)
+        {
+            ShowMessage("Update Successfully");
+        }
+        else
+        {
+            ShowMessage("Update Failed");
+        }
+    }
+
+    private void DeleteWindowOrder()
+    {
+        bool isDelete = orderWindowManager.CascadeDeleteOrder(orderWindowId);
+        if (isDelete)
+        {
+            ShowMessage("Delete Order with all the Elements is Successfully");
+            nav.NavigateTo("/ModifyOrderWindow/" + orderWindow.OrderId);
+        }
+        else
+        {
+            ShowMessage("Delete Failed");
+        }
+    }
+
+    private void EditElement(OrderWindowDetail item)
+    {
+        bool isUpdate = orderWindowDetailManager.Update(item);
+        if (isUpdate)
+        {
+            ShowMessage("Update Successfully");
+        }
+        else
+        {
+            ShowMessage("Update Failed");
+        }
+    }
+
+    private void DeleteElement(OrderWindowDetail item)
+    {
+        bool isUpdate = orderWindowDetailManager.Delete(item);
+        if (isUpdate)
+        {
+            GetOrderWindowElementByWindowId();            
+            ShowMessage("Delete Successfully");
+        }
+        else
+        {
+            ShowMessage("Delete Failed");
+        }
+    }
+
+    public async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("showAlert", message);
+    }
+}

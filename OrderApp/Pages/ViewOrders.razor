@@ -1,0 +1,109 @@
+﻿@page "/ViewOrders"
+@using OrderApp.BLL.Interface;
+@using OrderApp.Models;
+@using OrderApp.BLL;
+@inject IOrderManager orderService
+@inject IJSRuntime js
+<PageTitle>View All Orders</PageTitle>
+<h3>View All Orders</h3>
+<div class="container">
+
+    <div class="row">
+        <EditForm Model="@order" OnValidSubmit="SaveOrder">
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+            <div class="row">
+                <div class="col-md-5">
+                    <label>Order Name</label>
+                    <InputText @bind-Value="order.OrderName" class="form-control"></InputText>
+                    <ValidationMessage For="@(()=>order.OrderName)"></ValidationMessage>
+                </div>
+                <div class="col-md-5">
+                    <label>Order State</label>
+                    <InputText @bind-Value="order.OrderState" class="form-control"></InputText>
+                    <ValidationMessage For="@(()=>order.OrderState)"></ValidationMessage>
+                </div>
+                <div class="col-md-2" style="margin-top:24px;">
+                    <input type="submit" value="Save Order" class="btn btn-success btn-block" />
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="row" style="margin-top:20px;">
+        @if (orders != null)
+        {
+            <table class="table table-striped table-success">
+                <thead>
+                    <tr>
+                        <th>SL</th>
+                        <th>Name</th>
+                        <th>State</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int rowNo = 0;
+                    }
+                    @foreach (var item in orders)
+                    {
+                        <tr>
+                            <td>@(rowNo += 1)</td>
+                            <td>@item.OrderName</td>
+                            <td>@item.OrderState</td>
+                            <td>
+                                <a href="/CreateOrderWindow/@item.OrderId" class="btn btn-success">Create Order</a>
+                                <a href="/ModifyOrderWindow/@item.OrderId" class="btn btn-info">Edit Order</a>
+                                <a href="/OrderReport/@item.OrderId" class="btn btn-primary">View Order</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+
+
+
+
+</div>
+
+@code {
+    private Order order = new Order();
+
+    protected List<Order> orders = new List<Order>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetOrders();
+    }
+
+    private void GetOrders()
+    {
+        orders = orderService.GetAll().ToList();
+
+    }
+
+    public void SaveOrder()
+    {
+        var response = orderService.Add(order);
+        if (response)
+        {
+            ClearField();
+            GetOrders();
+            ShowMessage("Save Successfully");
+        }
+    }
+
+    public void ClearField()
+    {
+        order = new Order();
+    }
+
+    public async Task ShowMessage(string message)
+    {
+        await js.InvokeVoidAsync("showAlert", message);
+    }
+
+}
